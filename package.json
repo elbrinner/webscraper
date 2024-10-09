@@ -1,0 +1,17 @@
+{
+    "name": "scraper",
+    "version": "0.0.1",
+    "description": "Script para web scraping con Node.js",
+    "main": "scraper.js",
+    "scripts": {
+        "prestart": "node -e \"if (!process.argv[1]) { console.error('Error: Debes proporcionar un dominio. Ejemplo: npm start -- https://tu-dominio.com'); process.exit(1); }\"",
+        "start": "node scraper.js"
+    },
+    "author": "Elbrinner da Silva Fernandes",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^0.21.1",
+        "cheerio": "^1.0.0",
+        "fs": "^0.0.1-security"
+    }
+}
