@@ -2,6 +2,8 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const url = require('url');
+const path = require('path');
+const scrapedFolder = path.join(__dirname, 'scraped_pages');
 
 // Desactivar la verificación SSL (opcional)
 const axiosInstance = axios.create({
@@ -51,7 +53,15 @@ async function getTextFromPage(pageUrl) {
 
 // Función para guardar texto en un archivo .txt
 function saveTextToFile(pageUrl, text) {
-    const filename = `${new URL(pageUrl).hostname.replace(/\W/g, '_')}_${Date.now()}.txt`;
+    const urlObject = new URL(pageUrl);
+    const escapedHostname = urlObject.hostname.replace(/\W/g, '_');
+
+    // Create the folder if it doesn't exist
+    if (!fs.existsSync(scrapedFolder)) {
+        fs.mkdirSync(scrapedFolder);
+    }
+
+    const filename = `${scrapedFolder}/${escapedHostname}_${Date.now()}.txt`;
     fs.writeFileSync(filename, text, 'utf8');
     console.log(`Texto guardado en: ${filename}`);
 }
