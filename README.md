@@ -1,51 +1,69 @@
-# WebScraper
+# Web Scraper en Node.js
 
-![Node.js](https://img.shields.io/badge/Node.js-v16.x-green) 
-![npm](https://img.shields.io/badge/npm-v7.x-blue)
-![License](https://img.shields.io/badge/license-MIT-yellow)
-
-WebScraper es una herramienta simple desarrollada en Node.js para realizar **web scraping**. Este script extrae todos los enlaces de una página web dada, accede a cada uno y guarda el contenido textual de cada página en archivos `.txt` individuales. ¡Ideal para análisis de contenido o proyectos de recolección de datos!
+Este proyecto es un web scraper desarrollado en Node.js que permite extraer el contenido de todas las páginas enlazadas en un dominio específico, con la flexibilidad de incluir o excluir secciones de las páginas a través de selectores CSS (`class` o `id`). El contenido extraído se guarda en archivos JSON individuales, conteniendo solo texto plano. 
 
 ## Características
-- **Extracción de enlaces:** Recopila todos los enlaces de la página principal proporcionada.
-- **Extracción de texto:** Accede a cada enlace y extrae solo el contenido textual, eliminando etiquetas HTML, scripts y otros elementos no deseados.
-- **Almacenamiento en archivos:** Guarda el texto extraído en archivos `.txt` independientes, listos para su análisis.
+
+- Extrae enlaces de la página principal y recorre cada enlace para extraer su contenido.
+- Permite especificar selectores CSS para incluir o excluir partes específicas del contenido de la página.
+- Elimina automáticamente elementos no deseados, como imágenes y iframes, para obtener solo texto.
+- Guarda el contenido en archivos JSON con los atributos:
+  - `fecha`: Fecha de la extracción en formato ISO.
+  - `url`: URL de la página de donde se extrajo el contenido.
+  - `titulo`: Título de la página.
+  - `descripcion`: Descripción de la página (contenido de la metaetiqueta `description`).
+  - `contenido`: Contenido de la página en texto plano.
 
 ## Requisitos
 
-- [Node.js](https://nodejs.org/) v16 o superior
-- [npm](https://www.npmjs.com/) v7 o superior
+- Node.js
+- npm (Node Package Manager)
 
 ## Instalación
 
-Clona este repositorio y navega hasta la carpeta del proyecto:
-```bash
-git https://github.com/elbrinner/webscraper
-cd webscraper
+1. Clona el repositorio o descarga el archivo del script.
+2. Navega a la carpeta del proyecto:
+    ```bash
+    cd ruta/del/proyecto
+    ```
+3. Instala las dependencias necesarias:
+    ```bash
+    npm install axios cheerio
+    ```
 
+## Uso
 
-npm install
-
-node scraper.js https://tu-dominio.com
-
-
-```
-
-
-
-Ejemplo de salida
-El script generará archivos .txt con el contenido textual de cada página enlazada desde el dominio principal. Los nombres de los archivos incluirán el nombre de la página y una marca de tiempo para evitar colisiones:
-
-
-example_com_1696891245678.txt
-example_com_1696891267890.txt
-
-Dependencias
-
-axios - Para realizar solicitudes HTTP de manera simple.
-cheerio - Para procesar y manipular el contenido HTML.
-Para instalar manualmente, usa:
+Ejecuta el script en la línea de comandos con el siguiente formato:
 
 ```bash
-npm install axios cheerio
-```
+node scraper.js <dominio> [selectores_para_incluir] [selectores_para_excluir]
+
+Parámetros
+<dominio>: URL del dominio del que deseas hacer scraping. (Ejemplo: https://ejemplo.com)
+[selectores_para_incluir] (opcional): Selectores CSS separados por comas (class o id) que deseas incluir en el contenido extraído. Ejemplo: '.contenido,.articulo'
+[selectores_para_excluir] (opcional): Selectores CSS separados por comas (class o id) que deseas excluir del contenido extraído. Ejemplo: '#publicidad,.footer'
+Ejemplo
+Para extraer contenido de https://ejemplo.com, incluyendo solo las secciones con las clases .contenido y .articulo, y excluyendo elementos con los selectores #publicidad y .footer, usa el siguiente comando:
+
+bash
+Copiar código
+node scraper.js https://ejemplo.com .contenido,.articulo #publicidad,.footer
+Salida
+Los archivos JSON se guardarán en la carpeta scraped_pages en la raíz del proyecto.
+Cada archivo JSON tendrá un nombre único en el formato <dominio>_timestamp.json para evitar sobrescribir archivos anteriores.
+Ejemplo de un archivo JSON generado:
+json
+
+{
+  "fecha": "2024-11-14T12:34:56.789Z",
+  "url": "https://ejemplo.com/pagina",
+  "titulo": "Título de la Página",
+  "descripcion": "Descripción de la página",
+  "contenido": "Este es el texto principal de la página sin etiquetas HTML."
+}
+
+
+Notas
+
+Asegúrate de que el dominio que estás scraping permita realizar este tipo de acciones y revisa su robots.txt para confirmar.
+Puedes modificar el script para personalizar la configuración de eliminación de elementos HTML según tus necesidades.

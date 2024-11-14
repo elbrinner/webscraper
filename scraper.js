@@ -33,50 +33,79 @@ async function getLinksFromPage(pageUrl) {
     }
 }
 
-// Función para extraer solo el texto de una página
-async function getTextFromPage(pageUrl) {
+// Función para extraer texto de una página, con opciones de exclusión e inclusión
+async function getTextFromPage(pageUrl, includeSelectors = [], excludeSelectors = []) {
     try {
         const { data } = await axiosInstance.get(pageUrl);
         const $ = cheerio.load(data);
 
-        // Elimina etiquetas que no son de contenido
-        $('script, style, iframe, noscript').remove();
+        // Elimina los elementos no deseados según los selectores excluidos
+        excludeSelectors.forEach(selector => $(selector).remove());
 
-        // Obtén el texto principal de la página
-        const pageText = $('body').text().replace(/\s+/g, ' ').trim();
-        return pageText;
+        // Crear una copia temporal de los elementos de la página
+        const $tempContent = $.root().clone();
+
+        // Eliminar imágenes, iframes y otros elementos visuales en la copia temporal
+        $tempContent.find('img, iframe, video, picture, object, embed').remove();
+
+        // Obtiene el título de la página
+        const title = $('title').text().trim();
+
+        // Obtiene la descripción desde la metaetiqueta description
+        const description = $('meta[name="description"]').attr('content') || '';
+
+        // Incluye solo los selectores específicos si están definidos y extrae texto limpio
+        let content = '';
+        if (includeSelectors.length > 0) {
+            includeSelectors.forEach(selector => {
+                content += $tempContent.find(selector).text().replace(/\s+/g, ' ').trim() + ' ';
+            });
+        } else {
+            // Si no se especifican selectores, obtener texto de todo el body en la copia temporal
+            content = $tempContent.find('body').text().replace(/\s+/g, ' ').trim();
+        }
+
+        // Crear el JSON con la información solicitada
+        const pageData = {
+            fecha: new Date().toISOString(),
+            url: pageUrl,
+            titulo: title,
+            descripcion: description,
+            contenido: content.trim() // Solo texto, sin etiquetas HTML
+        };
+
+        return pageData;
     } catch (error) {
         console.error(`Error al cargar ${pageUrl}:`, error.message);
-        return '';
+        return null;
     }
 }
 
-// Función para guardar texto en un archivo .txt
-function saveTextToFile(pageUrl, text) {
-    const urlObject = new URL(pageUrl);
-    const escapedHostname = urlObject.hostname.replace(/\W/g, '_');
+// Función para guardar JSON de cada página en un archivo
+function saveJsonToFile(data) {
+    const urlObject = new URL(data.url);
+    const filename = `${scrapedFolder}/${data.titulo.replace(/\W/g, '_')}.json`;
 
-    // Create the folder if it doesn't exist
+    // Crear la carpeta si no existe
     if (!fs.existsSync(scrapedFolder)) {
         fs.mkdirSync(scrapedFolder);
     }
 
-    const filename = `${scrapedFolder}/${escapedHostname}_${Date.now()}.txt`;
-    fs.writeFileSync(filename, text, 'utf8');
-    console.log(`Texto guardado en: ${filename}`);
+    fs.writeFileSync(filename, JSON.stringify(data, null, 2), 'utf8');
+    console.log(`Archivo JSON guardado en: ${filename}`);
 }
 
 // Función principal para obtener enlaces y extraer el texto de cada uno
-async function scrapeWebsite(domain) {
+async function scrapeWebsite(domain, includeSelectors, excludeSelectors) {
     console.log(`Obteniendo enlaces de: ${domain}`);
     const links = await getLinksFromPage(domain);
 
     if (links.length) {
         for (const link of links) {
             console.log(`Extrayendo texto de: ${link}`);
-            const text = await getTextFromPage(link);
-            if (text) {
-                saveTextToFile(link, text);
+            const pageData = await getTextFromPage(link, includeSelectors, excludeSelectors);
+            if (pageData) {
+                saveJsonToFile(pageData); // Guardar cada página en un archivo JSON separado
             } else {
                 console.log(`No se pudo extraer el texto de: ${link}`);
             }
@@ -86,10 +115,13 @@ async function scrapeWebsite(domain) {
     }
 }
 
-// Dominio a pasar como parámetro
+// Procesar argumentos de la línea de comandos
 const domain = process.argv[2];
+const includeSelectors = process.argv[3] ? process.argv[3].split(',') : [];
+const excludeSelectors = process.argv[4] ? process.argv[4].split(',') : [];
+
 if (!domain) {
     console.log('Por favor, proporciona un dominio.');
 } else {
-    scrapeWebsite(domain);
+    scrapeWebsite(domain, includeSelectors, excludeSelectors);
 }
